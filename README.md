@@ -24,10 +24,7 @@ The following **additional** features are implemented:
 - [ ] List anything else that you can get done to improve the app functionality!
 
 ## Video Walkthrough 
-
-Here's a walkthrough of implemented user stories:
-
-<img src='http://imgur.com/a/aAJE5' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+![](TipCalculator.gif)
 
 GIF created with [LiceCap](http://www.cockos.com/licecap/).
 
