@@ -14,21 +14,53 @@ class ViewController: UIViewController {
     @IBOutlet weak var tipLabel: UILabel!
     @IBOutlet weak var totalLabel: UILabel!
     
-    //@IBOutlet weak var tipControl: UISegmentedControl!
+    let formatter = NumberFormatter()
+    let defaults = UserDefaults.standard
+    let SELECTED_INDEX = "segmentedControlIndex"
+    let TIMESTAMP_KEY = "billTS"
+    let BILL_KEY = "bill"
+    let NUM_MINUTES = 10
     
     @IBOutlet weak var tipControl: UISegmentedControl!
     
+    // called once
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        print("view did load")
+        
+        formatter.locale = Locale.current
+        formatter.numberStyle = .currency
+        
+        setBill()
+        billField.becomeFirstResponder()
     }
     
+    // called when the view will appear(multiple times)
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         print("view will appear")
-        let defaults = UserDefaults.standard
-        tipControl.selectedSegmentIndex = defaults.integer(forKey: "segmentedControlIndex")
-        calculateTipWork()
+        
+        tipControl.selectedSegmentIndex = defaults.integer(forKey: SELECTED_INDEX)
+        calculateTip(tipControl)
+    }
+    
+
+    // show the previous bill amount if it's been more than a minute since it was set
+    func setBill() {
+        let timeNow = Date()
+        let billTS = defaults.value(forKey: TIMESTAMP_KEY) as? Date ?? timeNow as Date
+        if (billTS == timeNow) {
+            return
+        }
+        let timeElapsed = timeNow.timeIntervalSince(billTS)
+        print(timeElapsed)
+        // if it's been over a minute since the bill was last set, clear it out
+        let overTime = timeElapsed > TimeInterval(60*NUM_MINUTES)
+        if (overTime) {
+            billField.text = ""
+        } else {
+            billField.text = defaults.string(forKey: BILL_KEY)
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -55,22 +87,33 @@ class ViewController: UIViewController {
         view.endEditing(true)
     }
     
-    
     // I had to manually change Any to AnyObject to connect the tipControl action
     @IBAction func calculateTip(_ sender: AnyObject) {
-        calculateTipWork()
-    }
-    
-    func calculateTipWork() {
         let tipPercentages = [0.18, 0.2, 0.25]
         
         let bill = Double(billField.text!) ?? 0
+
+        defaults.set(Date(), forKey: TIMESTAMP_KEY)
+        defaults.set(bill, forKey: BILL_KEY)
+        defaults.synchronize()
+        
         let index = tipControl.selectedSegmentIndex
-        let tip = bill * tipPercentages[index]
+        let tip = (bill * tipPercentages[index])
         let total = bill + tip
-        tipLabel.text = String(format: "%.2f", tip)
-        totalLabel.text = String(format: "%.2f", total)
+        
+        tipLabel.text = formatter.string(from: NSNumber(value: tip))
+        totalLabel.text = formatter.string(from: NSNumber(value: total))
+        
+        fadeInCalculations()
     }
-
+    
+    // gradually fade in the tip and total
+    func fadeInCalculations() {
+        self.tipLabel.alpha = 0
+        self.totalLabel.alpha = 0
+        UIView.animate(withDuration: 1, animations: {
+            self.tipLabel.alpha = 1
+            self.totalLabel.alpha = 1
+        })
+    }
 }
-
